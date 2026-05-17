@@ -132,13 +132,13 @@ Implemented commands:
 - Fragmented packets: partial bytes stay buffered across calls.
 - Garbage before header: skipped until a valid header is found.
 - Unknown command: parsed safely and interpreted as unknown.
-- Zero-length payload: allowed. I encode it as no data bytes, so length is `2` for command + CRC.
+- Empty command payload: encoded as one `0x00` data byte, matching the assignment note "`0x00` if empty".
 - Invalid declared length: rejected without throwing.
 - Unrealistic length after byte corruption: stream buffer drops/resynchronizes instead of waiting forever.
 
 ## Assumptions
 
-- The assignment says "Data N bytes" and also mentions "`0x00` if empty." I treated truly empty command payloads as zero data bytes because the length field already makes the packet unambiguous. This keeps `Get battery` request packets compact and easy to test.
+- The assignment says "Data N bytes" and also mentions "`0x00` if empty." I encode empty command payloads as one `0x00` byte so Python Core 1 and the React Native simulator build the same packet. Example: Get Battery request is `AB 55 00 03 17 00 17`.
 - A single `parse_packet(raw)` call expects exactly one complete packet. Multiple packets and partial packets are handled by `StreamBuffer`, because that matches how BLE notifications arrive in real applications.
 - Bad CRC is considered a parse failure in the Python core. The simulator still logs invalid packets on the UI side so chaos mode visibly demonstrates graceful failure.
 - I simulated BLE MTU as 20 bytes in the UI, the common minimum ATT payload size, to demonstrate fragmentation without needing real hardware.

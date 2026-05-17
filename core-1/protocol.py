@@ -25,8 +25,8 @@ def build_packet(cmd: int, data: bytes = b"", direction: str = "app_to_device") 
     Build one GlassLink G1 packet.
 
     Length is big-endian and covers command + data + CRC.
-    Zero-length data is encoded as no data bytes; the length is still valid
-    because command and CRC are always present.
+    The assignment says empty data should be encoded as 0x00, so callers may
+    pass b"" and the builder will send one zero payload byte.
     """
     if not 0 <= cmd <= 0xFF:
         raise ValueError("cmd must fit in one byte")
@@ -38,9 +38,10 @@ def build_packet(cmd: int, data: bytes = b"", direction: str = "app_to_device") 
     else:
         raise ValueError("direction must be 'app_to_device' or 'device_to_app'")
 
-    length = 1 + len(data) + 1
-    crc = calculate_crc(cmd, data)
-    return header + length.to_bytes(2, "big") + bytes([cmd]) + data + bytes([crc])
+    payload = data if data else b"\x00"
+    length = 1 + len(payload) + 1
+    crc = calculate_crc(cmd, payload)
+    return header + length.to_bytes(2, "big") + bytes([cmd]) + payload + bytes([crc])
 
 
 def parse_packet(raw: bytes) -> Optional[ParsedPacket]:
@@ -101,6 +102,8 @@ def interpret_packet(packet: Optional[ParsedPacket]) -> str:
         if len(data) >= 2:
             charging = "charging" if data[1] == 0x01 else "not charging"
             return f"Battery: {data[0]}%, {charging}"
+        if data in (b"", b"\x00"):
+            return "Get battery request"
         return "Get battery request"
 
     if cmd == 0x22:
