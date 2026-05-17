@@ -10,6 +10,13 @@ core-1/   Python protocol parser, streaming reassembly buffer, pytest tests
 core-2/   React Native / Expo simulator UI
 bonus/    Option B voice intent classifier and one-page design doc
 ```
+
+## System Architecture
+
+![GlassLink G1 system architecture](docs/architecture.png)
+
+The React Native simulator is standalone and uses a JavaScript/TypeScript port of the protocol logic. The Python core is the reference parser with tests and stress tooling, while the bonus classifier is an independent voice-intent prototype.
+
 ## Features
 
 - **Protocol parser and builder:** Builds and parses GlassLink G1 packets with direction headers, big-endian length fields, command bytes, payload bytes, and CRC validation.
@@ -132,13 +139,13 @@ Implemented commands:
 - Fragmented packets: partial bytes stay buffered across calls.
 - Garbage before header: skipped until a valid header is found.
 - Unknown command: parsed safely and interpreted as unknown.
-- Empty command payload: encoded as one `0x00` data byte, matching the assignment note "`0x00` if empty".
+- Zero-length command payload: encoded as zero data bytes. The parser still tolerates `0x00` as a request marker because the assignment wording is ambiguous.
 - Invalid declared length: rejected without throwing.
 - Unrealistic length after byte corruption: stream buffer drops/resynchronizes instead of waiting forever.
 
 ## Assumptions
 
-- The assignment says "Data N bytes" and also mentions "`0x00` if empty." I encode empty command payloads as one `0x00` byte so Python Core 1 and the React Native simulator build the same packet. Example: Get Battery request is `AB 55 00 03 17 00 17`.
+- The assignment says "Data N bytes", mentions "`0x00` if empty", and separately asks for zero-length payload edge cases. I chose true zero-length payloads for request packets because the length field already identifies command + CRC. Example: Get Battery request is `AB 55 00 02 17 17`. The parser/interpreter also tolerates `AB 55 00 03 17 00 17` as the same request.
 - A single `parse_packet(raw)` call expects exactly one complete packet. Multiple packets and partial packets are handled by `StreamBuffer`, because that matches how BLE notifications arrive in real applications.
 - Bad CRC is considered a parse failure in the Python core. The simulator still logs invalid packets on the UI side so chaos mode visibly demonstrates graceful failure.
 - I simulated BLE MTU as 20 bytes in the UI, the common minimum ATT payload size, to demonstrate fragmentation without needing real hardware.

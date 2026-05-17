@@ -51,6 +51,7 @@ class StressResult:
 
 
 def parse_hex_stream(text: str) -> bytes:
+    # Accept friendly formats like "AB 55", "AB:55", or "AB-55".
     tokens = re.findall(r"[0-9a-fA-F]{2}", text)
     if not tokens:
         raise ValueError("no hex bytes found")
@@ -80,6 +81,7 @@ def decode_hex_stream(text: str) -> list[str]:
 
 
 def corrupt_packet(packet: bytes, rng: random.Random) -> bytes:
+    # These are the same corruption families exposed in the simulator's chaos mode.
     mode = rng.choice(("crc", "truncate", "byte_flip"))
     data = bytearray(packet)
 
@@ -95,6 +97,7 @@ def corrupt_packet(packet: bytes, rng: random.Random) -> bytes:
 
 
 def fragment(packet: bytes, rng: random.Random, mtu: int) -> list[bytes]:
+    # Random chunk sizes mimic BLE notifications arriving at uneven boundaries.
     chunks = []
     start = 0
     while start < len(packet):
@@ -116,6 +119,8 @@ def run_stress(count: int, seed: int, corruption_rate: float, mtu: int) -> Stres
         packet = build_packet(cmd, payload, direction)
 
         if rng.random() < corruption_rate:
+            # Corruption happens before fragmentation to simulate a damaged
+            # outgoing packet entering the byte stream.
             packet = corrupt_packet(packet, rng)
             corrupted += 1
 

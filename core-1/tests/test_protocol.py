@@ -88,9 +88,19 @@ def test_zero_length_payload():
     packet = build_packet(0x17, b"")
     parsed = parse_packet(packet)
 
-    assert packet == bytes.fromhex("AB 55 00 03 17 00 17")
+    assert packet == bytes.fromhex("AB 55 00 02 17 17")
     assert parsed is not None
     assert parsed.command == 0x17
+    assert parsed.data == b""
+    assert interpret_packet(parsed) == "Get battery request"
+
+
+def test_zero_marker_payload_is_tolerated_for_request():
+    packet = build_packet(0x17, b"\x00")
+    parsed = parse_packet(packet)
+
+    assert packet == bytes.fromhex("AB 55 00 03 17 00 17")
+    assert parsed is not None
     assert parsed.data == b"\x00"
     assert interpret_packet(parsed) == "Get battery request"
 

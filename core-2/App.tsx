@@ -67,7 +67,7 @@ function computeCRC(cmd: number, data: number[]) {
  *   Header  : 2 bytes — direction-dependent
  *   Length  : 2 bytes big-endian — covers cmd(1) + data(N) + crc(1)
  *   Command : 1 byte
- *   Data    : N bytes (0x00 if empty per spec)
+ *   Data    : N bytes; request packets may have zero data bytes
  *   CRC     : 1 byte
  */
 function buildPacket(cmd: number, data: number[] = [], direction = 'app->device') {
@@ -75,21 +75,20 @@ function buildPacket(cmd: number, data: number[] = [], direction = 'app->device'
     throw new Error(`buildPacket: invalid cmd 0x${cmd?.toString(16)}`);
   }
 
-  const safeData = data.length === 0 ? [0x00] : data;
   const header = direction === 'app->device'
     ? HEADER_APP_TO_DEVICE
     : HEADER_DEVICE_TO_APP;
 
-  const crc = computeCRC(cmd, safeData);
+  const crc = computeCRC(cmd, data);
   // length covers cmd(1) + data(N) + crc(1)
-  const length = 1 + safeData.length + 1;
+  const length = 1 + data.length + 1;
 
   return new Uint8Array([
     ...header,
     (length >> 8) & 0xFF,
     length & 0xFF,
     cmd,
-    ...safeData,
+    ...data,
     crc,
   ]);
 }
@@ -134,7 +133,7 @@ function parsePacket(raw: Uint8Array) {
     // data is everything between cmd and the final crc byte
     const data = Array.from(raw.slice(5, 4 + declaredLength - 1));
     const receivedCRC = raw[4 + declaredLength - 1];
-    const expectedCRC = computeCRC(cmd, data.length === 0 ? [0x00] : data);
+    const expectedCRC = computeCRC(cmd, data);
 
     const crcValid = receivedCRC === expectedCRC;
 

@@ -17,6 +17,7 @@ class ParsedPacket:
 
 def calculate_crc(cmd: int, data: bytes) -> int:
     """GlassLink G1 checksum: (cmd + sum(data)) & 0xFF."""
+    # The checksum intentionally ignores header and length, exactly as specified.
     return (cmd + sum(data)) & 0xFF
 
 
@@ -25,8 +26,9 @@ def build_packet(cmd: int, data: bytes = b"", direction: str = "app_to_device") 
     Build one GlassLink G1 packet.
 
     Length is big-endian and covers command + data + CRC.
-    The assignment says empty data should be encoded as 0x00, so callers may
-    pass b"" and the builder will send one zero payload byte.
+    Empty data is encoded as zero payload bytes. The parser/interpreter still
+    accepts b"\x00" for request-style commands because the assignment wording
+    says "0x00 if empty", but the builder keeps true zero-length payloads.
     """
     if not 0 <= cmd <= 0xFF:
         raise ValueError("cmd must fit in one byte")
@@ -38,10 +40,10 @@ def build_packet(cmd: int, data: bytes = b"", direction: str = "app_to_device") 
     else:
         raise ValueError("direction must be 'app_to_device' or 'device_to_app'")
 
-    payload = data if data else b"\x00"
-    length = 1 + len(payload) + 1
-    crc = calculate_crc(cmd, payload)
-    return header + length.to_bytes(2, "big") + bytes([cmd]) + payload + bytes([crc])
+    # Length is the framed payload only: command byte + data bytes + CRC byte.
+    length = 1 + len(data) + 1
+    crc = calculate_crc(cmd, data)
+    return header + length.to_bytes(2, "big") + bytes([cmd]) + data + bytes([crc])
 
 
 def parse_packet(raw: bytes) -> Optional[ParsedPacket]:
@@ -61,15 +63,19 @@ def parse_packet(raw: bytes) -> Optional[ParsedPacket]:
     else:
         return None
 
+    # The length field is big-endian and starts after the 2-byte header.
     declared_length = int.from_bytes(raw[2:4], "big")
     if declared_length < 2:
         return None
 
+    # parse_packet expects exactly one complete frame. StreamBuffer handles
+    # partial frames and concatenated frames before calling this function.
     total_size = 4 + declared_length
     if len(raw) != total_size:
         return None
 
     cmd = raw[4]
+    # Data sits between the command byte and final CRC byte.
     data = raw[5 : total_size - 1]
     received_crc = raw[total_size - 1]
     expected_crc = calculate_crc(cmd, data)
@@ -99,6 +105,7 @@ def interpret_packet(packet: Optional[ParsedPacket]) -> str:
         return f"Set LED brightness: {level}"
 
     if cmd == 0x17:
+        # Request packets may have no data. Replies carry level and charging flag.
         if len(data) >= 2:
             charging = "charging" if data[1] == 0x01 else "not charging"
             return f"Battery: {data[0]}%, {charging}"
@@ -114,6 +121,7 @@ def interpret_packet(packet: Optional[ParsedPacket]) -> str:
     if cmd == 0x45:
         if len(data) != 9:
             return f"Action sync: malformed payload ({len(data)} bytes)"
+        # The action sync payload is a fixed 9-byte bitmap in the order below.
         labels = ["photo", "recording", "mic", "vol+", "vol-", "nod", "shake", "music", "worn"]
         active = [label for label, value in zip(labels, data) if value]
         return "Action sync: " + (", ".join(active) if active else "all idle")

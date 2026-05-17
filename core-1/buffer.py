@@ -23,10 +23,13 @@ class StreamBuffer:
         while len(self._buffer) >= MIN_PACKET_SIZE:
             header_pos = self._find_header()
             if header_pos == -1:
+                # Keep one possible header byte so a split AB/55 or AC/55 header
+                # across BLE notifications can still be recovered.
                 self._keep_possible_partial_header()
                 break
 
             if header_pos > 0:
+                # Drop noise before the next valid frame header.
                 del self._buffer[:header_pos]
 
             if len(self._buffer) < 4:
@@ -34,22 +37,28 @@ class StreamBuffer:
 
             declared_length = int.from_bytes(self._buffer[2:4], "big")
             if declared_length < 2:
+                # A valid frame must at least contain command + CRC.
                 del self._buffer[0]
                 self.dropped_packets += 1
                 continue
 
             total_size = 4 + declared_length
             if total_size > self.max_packet_size:
+                # A corrupted length byte can claim a huge frame. Drop one byte
+                # and rescan so later packets are not blocked forever.
                 del self._buffer[0]
                 self.dropped_packets += 1
                 continue
 
             if len(self._buffer) < total_size:
+                # Incomplete frame: wait for the next BLE notification chunk.
                 break
 
             raw = bytes(self._buffer[:total_size])
             parsed = parse_packet(raw)
             if parsed is None:
+                # Usually a CRC failure. The frame boundary was still known, so
+                # remove it and continue scanning the remaining stream.
                 self.dropped_packets += 1
             else:
                 packets.append(parsed)
