@@ -1,6 +1,5 @@
 # GlassLink G1 Smart Glasses Simulator
 
-Internship assignment submission for the Alfaleus Tech IoT and BLE Application Developer role.
 
 I built a defensive parser for the fictional GlassLink G1 BLE protocol, a React Native/Expo simulator for both sides of the connection, and a bonus multilingual voice intent classifier.
 
@@ -11,6 +10,15 @@ core-1/   Python protocol parser, streaming reassembly buffer, pytest tests
 core-2/   React Native / Expo simulator UI
 bonus/    Option B voice intent classifier and one-page design doc
 ```
+## Features
+
+- Defensive BLE packet parser and builder
+- Streaming reassembly buffer for fragmented BLE notifications
+- Corruption-resistant parsing and CRC validation
+- React Native smart-glasses simulator
+- Real-time packet hex dump and interpretation
+- Chaos mode with deterministic corruption testing
+- Multilingual offline voice intent classifier
 
 ## Quick Start
 
