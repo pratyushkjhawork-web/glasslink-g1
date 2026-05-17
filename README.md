@@ -12,13 +12,28 @@ bonus/    Option B voice intent classifier and one-page design doc
 ```
 ## Features
 
-- Defensive BLE packet parser and builder
-- Streaming reassembly buffer for fragmented BLE notifications
-- Corruption-resistant parsing and CRC validation
-- React Native smart-glasses simulator
-- Real-time packet hex dump and interpretation
-- Chaos mode with deterministic corruption testing
-- Multilingual offline voice intent classifier
+- **Protocol parser and builder:** Builds and parses GlassLink G1 packets with direction headers, big-endian length fields, command bytes, payload bytes, and CRC validation.
+
+- **Streaming reassembly buffer:** Handles fragmented BLE-style packets, concatenated packets, garbage bytes before headers, truncated input, and corrupted length fields without crashing.
+
+- **Human-readable packet interpretation:** Converts supported commands into readable events such as LED brightness changes, battery updates, charging status, photo capture, action sync, and phone time sync.
+
+- **React Native simulator UI:** Simulates both sides of the connection with a glasses/device panel and phone/app panel.
+
+- **Live packet log:** Displays timestamped packet traffic with direction, parsed meaning, and raw hex dump.
+
+- **Chaos mode:** Randomly corrupts around 10% of outgoing packets using byte flip, truncation, or bad CRC to test parser resilience.
+
+- **Protocol lab tools:** Includes `packet_lab.py` for decoding pasted hex streams and running deterministic noisy-stream stress tests.
+
+- **Bonus voice intent classifier:** Classifies English, Hindi, Telugu, and transliterated voice commands into `capture`, `exit`, `wake`, `chat`, or `none`.
+
+- **Measurable bonus evaluation:** Includes a small labeled evaluation script for the classifier and pytest coverage for parser and bonus logic.
+
+- **Documented assumptions:** README explains protocol assumptions, trade-offs, edge-case handling, and future improvements.
+
+
+
 
 ## Quick Start
 
