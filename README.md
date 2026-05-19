@@ -13,7 +13,7 @@ bonus/    Option B voice intent classifier and one-page design doc
 
 ## System Architecture
 
-![GlassLink G1 system architecture](docs/architecture.png)
+![GlassLink G1 system architecture](docs/arch.png)
 
 The React Native simulator is standalone and uses a JavaScript/TypeScript port of the protocol logic. The Python core is the reference parser with tests and stress tooling, while the bonus classifier is an independent voice-intent prototype.
 
