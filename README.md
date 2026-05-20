@@ -3,6 +3,8 @@
 
 I built a defensive parser for the fictional GlassLink G1 BLE protocol, a React Native/Expo simulator for both sides of the connection, and a bonus multilingual voice intent classifier.
 
+
+
 ## Repository Structure
 
 ```text
@@ -41,7 +43,16 @@ The React Native simulator is standalone and uses a JavaScript/TypeScript port o
 
 
 
+## Screen Recording
 
+**[Watch the simulator in action](./docs/core-2%20-%20Google%20Chrome%202026-05-18%2015-03-15.mp4)** (82 seconds)
+
+Demonstrates:
+- BLE connection lifecycle
+- Bidirectional packet exchange  
+- Real-time packet log with timestamps and direction arrows
+- Chaos mode: 10% packet corruption with graceful error handling
+- Packet fragmentation and reassembly
 ## Quick Start
 
 ### Core 1: Protocol Parser
