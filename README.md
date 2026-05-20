@@ -45,7 +45,7 @@ The React Native simulator is standalone and uses a JavaScript/TypeScript port o
 
 ## Screen Recording
 
-**[Watch the simulator in action](./docs/core-2%20-%20Google%20Chrome%202026-05-18%2015-03-15.mp4)** (82 seconds)
+**[Watch the simulator in action](https://drive.google.com/file/d/1HaHsahxFAZu9Rzyzlnj9J7zJUPw_8cG7/view?usp=drivesdk)** (82 seconds)
 
 Demonstrates:
 - BLE connection lifecycle
